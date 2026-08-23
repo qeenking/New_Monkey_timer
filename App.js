@@ -38,11 +38,10 @@ export default function App() {
   const intervalRef = useRef(null);
   const appState = useRef(AppState.currentState);
 
-  // Android 알림 채널 생성 + 알림 권한 요청 (최초 1회)
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     (async () => {
-      await notifee.requestPermission(); // Android 13+ 에서 필수
+      await notifee.requestPermission();
       await notifee.createChannel({
         id: CHANNEL_ID,
         name: 'Workout Timer',
@@ -89,7 +88,6 @@ export default function App() {
   }, []);
 
   const handleStart = async () => {
-    if (isRunning) return;
     startTimeRef.current = Date.now();
     setIsRunning(true);
     clearInterval(intervalRef.current);
@@ -103,7 +101,25 @@ export default function App() {
       }
     }, 100);
 
-    updateNotification(formatElapsed(0), setCount);
+    updateNotification(formatElapsed(elapsedBeforePauseRef.current), setCount);
+  };
+
+  const handleStop = async () => {
+    if (startTimeRef.current) {
+      elapsedBeforePauseRef.current += Date.now() - startTimeRef.current;
+      startTimeRef.current = null;
+    }
+    setIsRunning(false);
+    clearInterval(intervalRef.current);
+    await clearNotification();
+  };
+
+  const handleStartStopToggle = () => {
+    if (isRunning) {
+      handleStop();
+    } else {
+      handleStart();
+    }
   };
 
   const handleReset = async () => {
@@ -165,11 +181,12 @@ export default function App() {
 
       <View style={styles.buttonRow}>
         <TouchableOpacity
-          style={[styles.pillButton, isRunning && styles.buttonDisabled]}
-          onPress={handleStart}
-          disabled={isRunning}
+          style={[styles.pillButton, isRunning && styles.pillButtonStop]}
+          onPress={handleStartStopToggle}
         >
-          <Text style={styles.pillButtonText}>Start</Text>
+          <Text style={styles.pillButtonText}>
+            {isRunning ? 'Stop' : 'Start'}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.pillButton} onPress={handleReset}>
@@ -191,6 +208,7 @@ export default function App() {
 const COLOR_BG = '#f7f7f8';
 const COLOR_TEXT = '#111111';
 const COLOR_VIOLET = '#8a2be2';
+const COLOR_RED = '#f0324c';
 const COLOR_BLUE = '#4169e1';
 const COLOR_SNOW = '#FFFFFF';
 
@@ -207,7 +225,7 @@ const styles = StyleSheet.create({
   },
   timerText: {
     color: COLOR_TEXT,
-    fontSize: 72,
+    fontSize: 48,
     fontVariant: ['tabular-nums'],
     fontWeight: '700',
   },
@@ -217,26 +235,28 @@ const styles = StyleSheet.create({
   },
   setNumber: {
     color: COLOR_TEXT,
-    fontSize: 56,
+    fontSize: 36,
     fontWeight: '700',
   },
   setLabel: {
     color: COLOR_TEXT,
-    fontSize: 16,
-    marginTop: -6,
+    fontSize: 15,
+    marginTop: -4,
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 60,
+    alignItems: 'center',
+    marginBottom: 50,
+    paddingHorizontal: 12,
   },
   pillButton: {
     backgroundColor: COLOR_VIOLET,
-    borderRadius: 36,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    marginHorizontal: 8,
-    minWidth: 96,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginHorizontal: 6,
+    minWidth: 78,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -245,22 +265,22 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  pillButtonStop: {
+    backgroundColor: COLOR_RED,
+  },
   pillButtonText: {
     color: COLOR_SNOW,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
   },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
   doneButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: COLOR_BLUE,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
@@ -269,7 +289,7 @@ const styles = StyleSheet.create({
   },
   doneButtonText: {
     color: COLOR_SNOW,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
   },
 });
