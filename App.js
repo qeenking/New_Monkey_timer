@@ -36,6 +36,7 @@ function TimerScreen() {
   const [displayTime, setDisplayTime] = useState({ minutes: '00', seconds: '00' });
   const [isRunning, setIsRunning] = useState(false);
   const [setCount, setSetCount] = useState(0);
+  const [debugMsg, setDebugMsg] = useState('대기 중');
 
   const startTimeRef = useRef(null);
   const elapsedBeforePauseRef = useRef(0);
@@ -74,8 +75,9 @@ function TimerScreen() {
           pressAction: { id: 'default' },
         },
       });
+      setDebugMsg('알림 표시 성공: ' + new Date().toLocaleTimeString());
     } catch (e) {
-      console.log('notification error', e);
+      setDebugMsg('알림 에러: ' + String(e));
     }
   }, []);
 
@@ -217,6 +219,8 @@ function TimerScreen() {
       <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
         <Text style={styles.doneButtonText}>Done</Text>
       </TouchableOpacity>
+
+      <Text style={styles.debugText}>{debugMsg}</Text>
     </View>
   );
 }
@@ -315,5 +319,11 @@ const styles = StyleSheet.create({
     color: COLOR_SNOW,
     fontSize: 15,
     fontWeight: '700',
+  },
+  debugText: {
+    color: '#999999',
+    fontSize: 11,
+    marginTop: 12,
+    textAlign: 'center',
   },
 });
