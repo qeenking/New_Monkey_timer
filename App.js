@@ -1,181 +1,43 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
-  AppState,
   StatusBar,
-  Platform,
 } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import notifee, { AndroidImportance, AndroidVisibility } from '@notifee/react-native';
-
-const NOTIFICATION_ID = 'workout-timer';
-const CHANNEL_ID = 'workout-timer-channel';
-
-function formatElapsed(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60);
-  return {
-    minutes: String(minutes).padStart(2, '0'),
-    seconds: String(seconds).padStart(2, '0'),
-  };
-}
-
-function formatClock({ minutes, seconds }) {
-  return `${minutes}:${seconds}`;
-}
+import notifee from '@notifee/react-native';
+import * as timerService from './timerService';
 
 function TimerScreen() {
   const insets = useSafeAreaInsets();
-  const [displayTime, setDisplayTime] = useState({ minutes: '00', seconds: '00' });
-  const [isRunning, setIsRunning] = useState(false);
-  const [setCount, setSetCount] = useState(0);
-  const [debugMsg, setDebugMsg] = useState('대기 중');
-
-  const startTimeRef = useRef(null);
-  const elapsedBeforePauseRef = useRef(0);
-  const intervalRef = useRef(null);
-  const appState = useRef(AppState.currentState);
+  const [state, setState] = useState(timerService.getSnapshot());
 
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    (async () => {
-      await notifee.requestPermission();
-      await notifee.createChannel({
-        id: CHANNEL_ID,
-        name: 'Workout Timer',
-        importance: AndroidImportance.LOW,
-        visibility: AndroidVisibility.PUBLIC,
-      });
-    })();
+    const unsubscribe = timerService.subscribe(setState);
+    timerService.ensureNotificationSetup();
+    const unsubscribeForeground = notifee.onForegroundEvent(
+      timerService.handleNotificationEvent
+    );
     return () => {
-      notifee.stopForegroundService();
+      unsubscribe();
+      unsubscribeForeground();
     };
   }, []);
 
-  const updateNotification = useCallback(async (timeObj, currentSetCount) => {
-    if (Platform.OS !== 'android') return;
-    try {
-      await notifee.displayNotification({
-        id: NOTIFICATION_ID,
-        title: '운동 타이머',
-        body: `${formatClock(timeObj)} 진행 중 · ${currentSetCount} set`,
-        android: {
-          channelId: CHANNEL_ID,
-          asForegroundService: true,
-          ongoing: true,
-          colorized: true,
-          smallIcon: 'ic_launcher',
-          pressAction: { id: 'default' },
-        },
-      });
-      setDebugMsg('알림 표시 성공: ' + new Date().toLocaleTimeString());
-    } catch (e) {
-      setDebugMsg('알림 에러: ' + String(e));
-    }
-  }, []);
-
-  const clearNotification = useCallback(async () => {
-    if (Platform.OS !== 'android') return;
-    try {
-      await notifee.stopForegroundService();
-      await notifee.cancelNotification(NOTIFICATION_ID);
-    } catch (e) {
-      console.log('clear notification error', e);
-    }
-  }, []);
-
-  const tick = useCallback(() => {
-    const now = Date.now();
-    const elapsed =
-      elapsedBeforePauseRef.current +
-      (startTimeRef.current ? now - startTimeRef.current : 0);
-    const timeObj = formatElapsed(elapsed);
-    setDisplayTime(timeObj);
-    return timeObj;
-  }, []);
-
-  const handleStart = async () => {
-    startTimeRef.current = Date.now();
-    setIsRunning(true);
-    clearInterval(intervalRef.current);
-
-    let notifTickCount = 0;
-    intervalRef.current = setInterval(() => {
-      const timeObj = tick();
-      notifTickCount += 1;
-      if (notifTickCount % 10 === 0) {
-        updateNotification(timeObj, setCount);
-      }
-    }, 100);
-
-    updateNotification(formatElapsed(elapsedBeforePauseRef.current), setCount);
-  };
-
-  const handleStop = async () => {
-    if (startTimeRef.current) {
-      elapsedBeforePauseRef.current += Date.now() - startTimeRef.current;
-      startTimeRef.current = null;
-    }
-    setIsRunning(false);
-    clearInterval(intervalRef.current);
-    await clearNotification();
-  };
+  const { displayTime, isRunning, setCount } = state;
 
   const handleStartStopToggle = () => {
     if (isRunning) {
-      handleStop();
+      timerService.stop();
     } else {
-      handleStart();
+      timerService.start();
     }
   };
-
-  const handleReset = async () => {
-    clearInterval(intervalRef.current);
-    startTimeRef.current = null;
-    elapsedBeforePauseRef.current = 0;
-    setIsRunning(false);
-    setDisplayTime(formatElapsed(0));
-    await clearNotification();
-  };
-
-  const handleSet = () => {
-    setSetCount((prev) => prev + 1);
-  };
-
-  const handleDone = async () => {
-    clearInterval(intervalRef.current);
-    startTimeRef.current = null;
-    elapsedBeforePauseRef.current = 0;
-    setIsRunning(false);
-    setDisplayTime(formatElapsed(0));
-    setSetCount(0);
-    await clearNotification();
-  };
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextState === 'active' &&
-        isRunning
-      ) {
-        tick();
-      }
-      appState.current = nextState;
-    });
-    return () => subscription.remove();
-  }, [isRunning, tick]);
-
-  useEffect(() => {
-    return () => clearInterval(intervalRef.current);
-  }, []);
 
   return (
     <View
@@ -207,20 +69,18 @@ function TimerScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.pillButton} onPress={handleReset}>
+        <TouchableOpacity style={styles.pillButton} onPress={() => timerService.reset()}>
           <Text style={styles.pillButtonText}>Reset</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.pillButton} onPress={handleSet}>
+        <TouchableOpacity style={styles.pillButton} onPress={() => timerService.addSet()}>
           <Text style={styles.pillButtonText}>Set</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
+      <TouchableOpacity style={styles.doneButton} onPress={() => timerService.done()}>
         <Text style={styles.doneButtonText}>Done</Text>
       </TouchableOpacity>
-
-      <Text style={styles.debugText}>{debugMsg}</Text>
     </View>
   );
 }
@@ -319,11 +179,5 @@ const styles = StyleSheet.create({
     color: COLOR_SNOW,
     fontSize: 15,
     fontWeight: '700',
-  },
-  debugText: {
-    color: '#999999',
-    fontSize: 11,
-    marginTop: 12,
-    textAlign: 'center',
   },
 });
