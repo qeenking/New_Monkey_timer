@@ -5,10 +5,13 @@ import {
   View,
   TouchableOpacity,
   AppState,
-  SafeAreaView,
   StatusBar,
   Platform,
 } from 'react-native';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import notifee, { AndroidImportance, AndroidVisibility } from '@notifee/react-native';
 
 const NOTIFICATION_ID = 'workout-timer';
@@ -28,7 +31,8 @@ function formatClock({ minutes, seconds }) {
   return `${minutes}:${seconds}`;
 }
 
-export default function App() {
+function TimerScreen() {
+  const insets = useSafeAreaInsets();
   const [displayTime, setDisplayTime] = useState({ minutes: '00', seconds: '00' });
   const [isRunning, setIsRunning] = useState(false);
   const [setCount, setSetCount] = useState(0);
@@ -56,25 +60,33 @@ export default function App() {
 
   const updateNotification = useCallback(async (timeObj, currentSetCount) => {
     if (Platform.OS !== 'android') return;
-    await notifee.displayNotification({
-      id: NOTIFICATION_ID,
-      title: '운동 타이머',
-      body: `${formatClock(timeObj)} 진행 중 · ${currentSetCount} set`,
-      android: {
-        channelId: CHANNEL_ID,
-        asForegroundService: true,
-        ongoing: true,
-        colorized: true,
-        smallIcon: 'ic_launcher',
-        pressAction: { id: 'default' },
-      },
-    });
+    try {
+      await notifee.displayNotification({
+        id: NOTIFICATION_ID,
+        title: '운동 타이머',
+        body: `${formatClock(timeObj)} 진행 중 · ${currentSetCount} set`,
+        android: {
+          channelId: CHANNEL_ID,
+          asForegroundService: true,
+          ongoing: true,
+          colorized: true,
+          smallIcon: 'ic_launcher',
+          pressAction: { id: 'default' },
+        },
+      });
+    } catch (e) {
+      console.log('notification error', e);
+    }
   }, []);
 
   const clearNotification = useCallback(async () => {
     if (Platform.OS !== 'android') return;
-    await notifee.stopForegroundService();
-    await notifee.cancelNotification(NOTIFICATION_ID);
+    try {
+      await notifee.stopForegroundService();
+      await notifee.cancelNotification(NOTIFICATION_ID);
+    } catch (e) {
+      console.log('clear notification error', e);
+    }
   }, []);
 
   const tick = useCallback(() => {
@@ -135,7 +147,6 @@ export default function App() {
     setSetCount((prev) => prev + 1);
   };
 
-  // 운동 종료: 타이머 + 세트 모두 초기화
   const handleDone = async () => {
     clearInterval(intervalRef.current);
     startTimeRef.current = null;
@@ -165,7 +176,12 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, paddingBottom: insets.bottom + 16 },
+      ]}
+    >
       <StatusBar barStyle="dark-content" />
 
       <View style={styles.timerContainer}>
@@ -201,7 +217,15 @@ export default function App() {
       <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
         <Text style={styles.doneButtonText}>Done</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <TimerScreen />
+    </SafeAreaProvider>
   );
 }
 
@@ -217,10 +241,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLOR_BG,
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   timerContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  setContainer: {
+    marginBottom: 40,
     alignItems: 'center',
   },
   timerText: {
@@ -229,10 +258,6 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '700',
   },
-  setContainer: {
-    marginBottom: 60,
-    alignItems: 'center',
-  },
   setNumber: {
     color: COLOR_TEXT,
     fontSize: 36,
@@ -240,14 +265,14 @@ const styles = StyleSheet.create({
   },
   setLabel: {
     color: COLOR_TEXT,
-    fontSize: 15,
-    marginTop: -4,
+    fontSize: 14,
+    marginTop: -2,
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 30,
     paddingHorizontal: 12,
   },
   pillButton: {
@@ -274,13 +299,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   doneButton: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: COLOR_BLUE,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,

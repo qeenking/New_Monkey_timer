@@ -6,29 +6,21 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": ["./notifee-foreground-service-plugin.js"],
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "permissions": [
-        "FOREGROUND_SERVICE",
-        "POST_NOTIFICATIONS"
-      ],
+      "permissions": ["FOREGROUND_SERVICE", "FOREGROUND_SERVICE_SPECIAL_USE", "POST_NOTIFICATIONS"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "package": "com.qeenking.tempapp"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "44869f18-0ce2-4cbd-abdd-9e75e3f30686"
-      }
     }
   }
 }
