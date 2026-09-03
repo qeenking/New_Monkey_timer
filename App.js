@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   pillBtnImg: {
-    width: 108,
-    height: 78,
+    width: 97,
+    height: 70,
     marginHorizontal: 4,
   },
   doneBtnImg: {
-    width: 150,
-    height: 150,
+    width: 135,
+    height: 135,
     marginBottom: 20,
   },
 });
