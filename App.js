@@ -157,12 +157,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     position: 'absolute',
-    top: 0,
+    top: 8,
     left: 0,
     right: 0,
-    bottom: 0,
     textAlign: 'center',
-    textAlignVertical: 'center',
   },
   setLabelImg: {
     width: 140,
