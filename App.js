@@ -61,12 +61,12 @@ function TimerScreen() {
         />
 
         <View style={styles.setWrap}>
-          <Text style={styles.setNumber}>{setCount}</Text>
           <Image
             source={require('./assets/set_label.png')}
             style={styles.setLabelImg}
             resizeMode="contain"
           />
+          <Text style={styles.setNumber}>{setCount}</Text>
         </View>
       </View>
 
@@ -147,15 +147,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   setWrap: {
+    width: 140,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
   setNumber: {
     color: COLOR_TEXT,
-    fontSize: 34,
+    fontSize: 22,
     fontWeight: '800',
     position: 'absolute',
-    top: 6,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   setLabelImg: {
     width: 140,
@@ -173,8 +180,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   doneBtnImg: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     marginBottom: 20,
   },
 });
