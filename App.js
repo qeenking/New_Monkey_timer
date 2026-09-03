@@ -4,6 +4,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  Image,
   StatusBar,
 } from 'react-native';
 import {
@@ -43,43 +44,68 @@ function TimerScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top, paddingBottom: insets.bottom + 16 },
+        { paddingTop: insets.top, paddingBottom: insets.bottom + 12 },
       ]}
     >
       <StatusBar barStyle="dark-content" />
 
-      <View style={styles.timerContainer}>
+      <View style={styles.topArea}>
         <Text style={styles.timerText}>
           {displayTime.minutes}:{displayTime.seconds}
         </Text>
-      </View>
 
-      <View style={styles.setContainer}>
-        <Text style={styles.setNumber}>{setCount}</Text>
-        <Text style={styles.setLabel}>set</Text>
+        <Image
+          source={require('./assets/character.png')}
+          style={styles.character}
+          resizeMode="contain"
+        />
+
+        <View style={styles.setWrap}>
+          <Text style={styles.setNumber}>{setCount}</Text>
+          <Image
+            source={require('./assets/set_label.png')}
+            style={styles.setLabelImg}
+            resizeMode="contain"
+          />
+        </View>
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={[styles.pillButton, isRunning && styles.pillButtonStop]}
-          onPress={handleStartStopToggle}
-        >
-          <Text style={styles.pillButtonText}>
-            {isRunning ? 'Stop' : 'Start'}
-          </Text>
+        <TouchableOpacity onPress={handleStartStopToggle}>
+          <Image
+            source={
+              isRunning
+                ? require('./assets/stop_btn.png')
+                : require('./assets/start_btn.png')
+            }
+            style={styles.pillBtnImg}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.pillButton} onPress={() => timerService.reset()}>
-          <Text style={styles.pillButtonText}>Reset</Text>
+        <TouchableOpacity onPress={() => timerService.reset()}>
+          <Image
+            source={require('./assets/reset_btn.png')}
+            style={styles.pillBtnImg}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.pillButton} onPress={() => timerService.addSet()}>
-          <Text style={styles.pillButtonText}>Set</Text>
+        <TouchableOpacity onPress={() => timerService.addSet()}>
+          <Image
+            source={require('./assets/set_btn.png')}
+            style={styles.pillBtnImg}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.doneButton} onPress={() => timerService.done()}>
-        <Text style={styles.doneButtonText}>Done</Text>
+      <TouchableOpacity onPress={() => timerService.done()}>
+        <Image
+          source={require('./assets/done_btn.png')}
+          style={styles.doneBtnImg}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
     </View>
   );
@@ -93,12 +119,8 @@ export default function App() {
   );
 }
 
-const COLOR_BG = '#f7f7f8';
-const COLOR_TEXT = '#111111';
-const COLOR_VIOLET = '#8a2be2';
-const COLOR_RED = '#f0324c';
-const COLOR_BLUE = '#4169e1';
-const COLOR_SNOW = '#FFFFFF';
+const COLOR_BG = '#FFF7E8';
+const COLOR_TEXT = '#3a2b1c';
 
 const styles = StyleSheet.create({
   container: {
@@ -107,77 +129,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  timerContainer: {
+  topArea: {
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  setContainer: {
-    marginBottom: 40,
-    alignItems: 'center',
   },
   timerText: {
     color: COLOR_TEXT,
     fontSize: 48,
     fontVariant: ['tabular-nums'],
-    fontWeight: '700',
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  character: {
+    width: 220,
+    height: 148,
+    marginBottom: 8,
+  },
+  setWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   setNumber: {
     color: COLOR_TEXT,
-    fontSize: 36,
-    fontWeight: '700',
+    fontSize: 34,
+    fontWeight: '800',
+    position: 'absolute',
+    top: 6,
   },
-  setLabel: {
-    color: COLOR_TEXT,
-    fontSize: 14,
-    marginTop: -2,
+  setLabelImg: {
+    width: 140,
+    height: 56,
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 12,
+    marginBottom: 20,
   },
-  pillButton: {
-    backgroundColor: COLOR_VIOLET,
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginHorizontal: 6,
-    minWidth: 78,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+  pillBtnImg: {
+    width: 108,
+    height: 78,
+    marginHorizontal: 4,
   },
-  pillButtonStop: {
-    backgroundColor: COLOR_RED,
-  },
-  pillButtonText: {
-    color: COLOR_SNOW,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  doneButton: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: COLOR_BLUE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  doneButtonText: {
-    color: COLOR_SNOW,
-    fontSize: 15,
-    fontWeight: '700',
+  doneBtnImg: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
   },
 });
